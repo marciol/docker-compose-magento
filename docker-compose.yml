@@ -1,0 +1,49 @@
+version: "3"
+
+services:
+  static:
+    build: images/nginx
+    container_name: ${PROJECT_NAME}-static
+    restart: always
+    ports:
+      - "${LOCALHOST_HTTP_PORT:-80}:8000"
+      - "${LOCALHOST_HTTPS_PORT:-443}:443"
+    links:
+      - app-php-magento56
+    expose:
+      - "8000"
+      - "443"
+    networks:
+      default:
+        aliases:
+          - magento.test
+    env_file: ./.env
+    volumes:
+      - ./src/rpay:/var/www/html:delegated
+      - sockdata:/sock
+
+  app-php-magento56:
+    image: markoshust/magento-php:5.6-fpm
+    links:
+      - db
+    restart: always
+    volumes:
+      - ./src/rpay:/var/www/html:delegated
+      - sockdata:/sock
+    networks:
+      - default
+
+  db:
+    image: percona:5.7
+    restart: always
+    ports:
+      - 3306:3306
+    env_file: env/db.env
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - default
+
+volumes:
+  dbdata:
+  sockdata:
